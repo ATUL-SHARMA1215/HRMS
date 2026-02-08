@@ -5,6 +5,7 @@ export default function Attendance() {
   const [employeeId, setEmployeeId] = useState("");
   const [date, setDate] = useState("");
   const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // -------- Mark Attendance --------
   const markAttendance = async (status) => {
@@ -14,6 +15,8 @@ export default function Attendance() {
     }
 
     try {
+      setLoading(true);
+
       await api.post("/attendance", {
         employee_id: employeeId.trim(),
         date: date,
@@ -22,14 +25,19 @@ export default function Attendance() {
 
       alert(`Marked ${status} for ${employeeId}`);
 
-      fetchAttendance(); // refresh table
+      await fetchAttendance(); // refresh table after marking
     } catch (error) {
       console.error("POST attendance error:", error.response?.data || error);
-      alert("Error marking attendance");
+      alert(
+        error.response?.data?.detail ||
+          "Error marking attendance. Check backend connection."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  // -------- View Attendance (FINAL FIX HERE) --------
+  // -------- View Attendance --------
   const fetchAttendance = async () => {
     if (!employeeId) {
       alert("Enter Employee ID to view attendance");
@@ -37,25 +45,34 @@ export default function Attendance() {
     }
 
     try {
-      const res = await api.get(`/attendance/${employeeId.trim()}`); // ⭐ CORRECT PATH
+      setLoading(true);
+
+      const res = await api.get(`/attendance/${employeeId.trim()}`);
 
       console.log("GET attendance response:", res.data);
 
+      // Ensure records always array
       if (Array.isArray(res.data)) {
         setRecords(res.data);
-      } else if (res.data.attendance) {
+      } else if (Array.isArray(res.data.attendance)) {
         setRecords(res.data.attendance);
       } else {
         setRecords([]);
       }
     } catch (error) {
       console.error("GET attendance error:", error.response?.data || error);
-      alert("Unable to load attendance");
+      alert(
+        error.response?.data?.detail ||
+          "Unable to load attendance. Check backend URL or CORS."
+      );
+      setRecords([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 600 }}>
+    <div style={{ padding: 20, maxWidth: 700 }}>
       <h1>Attendance</h1>
 
       {/* Employee ID */}
@@ -83,6 +100,7 @@ export default function Attendance() {
       <div style={{ marginBottom: 20 }}>
         <button
           onClick={() => markAttendance("Present")}
+          disabled={loading}
           style={{
             marginRight: 10,
             backgroundColor: "green",
@@ -98,6 +116,7 @@ export default function Attendance() {
 
         <button
           onClick={() => markAttendance("Absent")}
+          disabled={loading}
           style={{
             backgroundColor: "red",
             color: "white",
@@ -112,6 +131,7 @@ export default function Attendance() {
 
         <button
           onClick={fetchAttendance}
+          disabled={loading}
           style={{
             marginLeft: 10,
             padding: "6px 12px",
@@ -122,6 +142,14 @@ export default function Attendance() {
           View Attendance
         </button>
       </div>
+
+      {/* Loading */}
+      {loading && <p>Loading...</p>}
+
+      {/* No records */}
+      {!loading && records.length === 0 && (
+        <p>No attendance records found.</p>
+      )}
 
       {/* Attendance Table */}
       {records.length > 0 && (
