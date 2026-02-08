@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Employees from "./pages/Employees";
-import Attendance from "./pages/Attendance";
+import Employees from "./pages/employees";
+import Attendance from "./pages/attendance";
 
 export default function App() {
   return (
