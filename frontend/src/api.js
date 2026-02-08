@@ -1,5 +1,7 @@
 import axios from "axios";
 
-export default axios.create({
-  baseURL: "http://hrms-backend-mmp3.onrender.com",
+const API =  axios.create({
+  baseURL: "https://hrms-backend-mmp3.onrender.com",
 });
+
+export default API;
