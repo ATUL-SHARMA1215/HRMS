@@ -1,0 +1,203 @@
+main.py:-
+from fastapi import FastAPI, Depends, HTTPException
+from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
+
+from database import SessionLocal, engine, Base
+import models, schemas
+
+Base.metadata.create_all(bind=engine)
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ---------- DB ----------
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# ---------- ROOT ----------
+@app.get("/")
+def root():
+    return {"message": "HRMS Lite API Running"}
+
+
+# ---------- GET EMPLOYEES ----------
+@app.get("/employees", response_model=list[schemas.EmployeeResponse])
+def get_employees(db: Session = Depends(get_db)):
+    return db.query(models.Employee).all()
+
+
+# ---------- ADD EMPLOYEE ----------
+@app.post("/employees", response_model=schemas.EmployeeResponse)
+def add_employee(emp: schemas.EmployeeCreate, db: Session = Depends(get_db)):
+
+    if db.query(models.Employee).filter(models.Employee.employee_id == emp.employee_id).first():
+        raise HTTPException(409, "Employee ID exists")
+
+    if db.query(models.Employee).filter(models.Employee.email == emp.email).first():
+        raise HTTPException(409, "Email exists")
+
+    new_emp = models.Employee(**emp.dict())
+    db.add(new_emp)
+    db.commit()
+    db.refresh(new_emp)
+    return new_emp
+
+
+# ---------- DELETE EMPLOYEE ----------
+@app.delete("/employees/{employee_id}")
+def delete_employee(employee_id: int, db: Session = Depends(get_db)):
+    emp = db.query(models.Employee).filter(models.Employee.id == employee_id).first()
+    if not emp:
+        raise HTTPException(404, "Employee not found")
+
+    db.delete(emp)
+    db.commit()
+    return {"message": "Employee deleted"}
+
+
+# ---------- MARK ATTENDANCE ----------
+@app.post("/attendance")
+def mark_attendance(attendance: schemas.AttendanceCreate, db: Session = Depends(get_db)):
+
+    # 1. check employee using employee_id (string)
+    emp = db.query(models.Employee).filter(
+        models.Employee.employee_id == attendance.employee_id
+    ).first()
+
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    # 2. check if attendance already exists for that date
+    record = db.query(models.Attendance).filter(
+        models.Attendance.employee_id == attendance.employee_id,
+        models.Attendance.date == attendance.date
+    ).first()
+
+    # 3. If exists → UPDATE
+    if record:
+        record.status = attendance.status
+        db.commit()
+        db.refresh(record)
+        return {"message": "Attendance updated"}
+
+    # 4. If not exists → INSERT
+    new_attendance = models.Attendance(
+        employee_id=attendance.employee_id,
+        date=attendance.date,
+        status=attendance.status
+    )
+
+    db.add(new_attendance)
+    db.commit()
+    db.refresh(new_attendance)
+
+    return {"message": "Attendance marked"}
+# ---------- GET ATTENDANCE OF EMPLOYEE ----------
+@app.get("/attendance/{employee_id}", response_model=list[schemas.AttendanceResponse])
+def get_attendance(employee_id: str, db: Session = Depends(get_db)):
+    return db.query(models.Attendance).filter(
+        models.Attendance.employee_id == employee_id
+    ).all()
+
+
+
+
+
+
+SCHEMAS.PY:-
+
+from pydantic import BaseModel
+from datetime import date
+
+
+class EmployeeCreate(BaseModel):
+    employee_id: str
+    name: str
+    email: str
+    department: str
+
+
+class EmployeeResponse(BaseModel):
+    id: int
+    employee_id: str
+    name: str
+    email: str
+    department: str
+
+    class Config:
+        orm_mode = True
+
+
+class AttendanceCreate(BaseModel):
+    employee_id: str      # ✅ THIS IS THE FIX
+    date: date
+    status: str
+
+
+class AttendanceResponse(BaseModel):
+    id: int
+    employee_id: str
+    date: date
+    status: str
+
+    class Config:
+        orm_mode = True
+
+
+
+
+
+MODEL.PY:-
+
+
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import relationship
+from database import Base
+
+
+class Employee(Base):
+    __tablename__ = "employees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    employee_id = Column(String(50), unique=True, nullable=False)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    department = Column(String(100), nullable=False)
+
+    attendances = relationship("Attendance", back_populates="employee")
+
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # ✅ STRING FK to employees.employee_id
+    employee_id = Column(
+        String(50),
+        ForeignKey("employees.employee_id"),
+        nullable=False
+    )
+
+    date = Column(Date, nullable=False)
+    status = Column(String(10), nullable=False)
+
+    employee = relationship("Employee", back_populates="attendances")
+
+    __table_args__ = (
+        UniqueConstraint("employee_id", "date", name="unique_attendance_per_day"),
+    )
