@@ -8,6 +8,12 @@ import models, schemas
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+origins = [
+    "https://hrms-8pdkpz30a-atul-sharmas-projects-0581ce75.vercel.app",
+    "http://localhost:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
