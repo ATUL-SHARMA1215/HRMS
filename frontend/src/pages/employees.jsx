@@ -12,7 +12,7 @@ export default function Employees() {
 
   const [deleteId, setDeleteId] = useState("");
 
-  const API = "http://127.0.0.1:8000";
+  const API = "https://hrms-backend-mmp3.onrender.com";
 
   const loadEmployees = async () => {
     const res = await axios.get(`${API}/employees`);
