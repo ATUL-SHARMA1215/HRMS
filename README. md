@@ -1,0 +1,66 @@
+HRMS Lite – Employee & Attendance Management System
+
+## A full-stack Human Resource Management System (HRMS) built using:
+
+Frontend: React (Vite) + Axios
+
+Backend: FastAPI + SQLAlchemy
+
+Database: SQLite / PostgreSQL (via Render)
+
+## Deployment:
+
+Backend → Render
+
+Frontend → Vercel
+
+This project allows managing employees and daily attendance through a simple web interface.
+
+## Live Application
+
+Frontend URL:
+
+👉
+ https://hrms-plb0ibtd1-atul-sharmas-projects-0581ce75.vercel.app/
+
+Backend API Base URL:
+
+👉 
+https://hrms-backend-mmp3.onrender.com
+
+Swagger API Docs:
+
+👉
+https://hrms-backend-mmp3.onrender.com/docs
+
+## Features
+
+Employee Management
+
+Add new employee
+
+View employee list
+
+Delete employee
+
+Unique employee ID validation
+
+Attendance Management
+
+Mark Present / Absent
+
+View attendance by employee ID
+
+One attendance record per employee per day
+
+Real-time refresh after marking attendance
+
+## System Features
+
+RESTful API using FastAPI
+
+CORS-enabled backend for frontend communication
+
+Fully deployed cloud application
+
+Clean UI with React
