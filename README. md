@@ -64,3 +64,65 @@ CORS-enabled backend for frontend communication
 Fully deployed cloud application
 
 Clean UI with React
+
+## API Endpoints
+
+### Employees
+
+GET /employees → List employees
+
+POST /employees → Add employee
+
+DELETE /employees/{employee_id} → Delete employee
+
+### Attendance
+
+POST /attendance → Mark attendance
+
+GET /attendance/{employee_id} → View attendance
+
+## Local Setup Instructions
+
+1. Clone Repository
+
+git clone
+
+https://github.com/ATUL-SHARMA1215/HRMS.git
+cd HRMS
+
+2. Backend Setup
+
+cd backend
+python -m venv venv
+venv\Scripts\activate   # Windows
+
+pip install -r requirements.txt
+uvicorn main:app --reload
+
+3. Frontend Setup
+
+cd frontend
+npm install
+npm run dev
+
+## Deployment 
+
+### Backend → Render
+
+Connected GitHub repository
+
+Added environment variables
+
+Auto-deploy enabled
+
+### Frontend → Vercel
+
+Connected GitHub repository
+
+Base API URL set to Render backend
+
+Public deployment enabled
+
+
+
+
